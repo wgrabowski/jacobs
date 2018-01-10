@@ -1,5 +1,9 @@
 # jacobs - just another commit build status checker
 jacobs check if your commits was processed by your Jenkins jobs
+# Requirements
+* git 
+* curl
+* jq
 # Before use / installation
 * clone repo or download zip to your machine
 * copy credentials.properties.sample as credentials.properties
