@@ -2,6 +2,9 @@
 JACOBS_HOME=$(dirname $0);
 REPO_HOME=$(git rev-parse --show-toplevel);
 declare -A last_revisions;
+COMMITS_GREP="";
+COMMITS_LIMIT=5;
+COMMIS_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 source "$JACOBS_HOME"/credentials.properties;
 
 # $1 - job name
@@ -44,14 +47,7 @@ check_commits(){
     done <<< "$1";
     printf "\n"
 }
-# $1 - number of last commits to check
-check_last_n_commits(){
-    check_commits "$(git log --oneline -$1)";
-}
-# $1 - pattern to filer by
-filter(){
-    check_commits "$(git log --oneline --grep="$1" -$2)";
-}
+
 usage(){
     echo 'jacobs - check if your commits were built by Jenkins
 
@@ -65,28 +61,24 @@ config(){
     printf "Current config:\n" "$JACOBS_HOME"/credentials.properties
     printf "%s: %s\n" "Jenkins host" $JENKINS_URL
     printf "%s: %s\n" "Jenkins user" $JENKINS_USER
-    printf "%s: %s\n" "Jenkins job " $JENKINS_JOB_NAME
     printf "\n To change config edit %s file\n" "$JACOBS_HOME"/credentials.properties
 }
 
 
-if [ "$#" == "0" ]; then
-    usage    
-fi
-
 while (( "$#" )); do
     case $1 in
-		last)
-			check_last_n_commits $2
+		--last)
+            COMMITS_LIMIT=$2;
             shift
-			exit
 
 		;;
-        filter)
-			filter $2 $3
+        --filter)
+            COMMITS_GREP=$2;
             shift
+		;;
+        --ref)
+            COMMITS_BRANCH=$2;
             shift
-			exit
 		;;
 		config)
 			config
@@ -99,4 +91,6 @@ while (( "$#" )); do
     shift
 done
 
-
+SOURCES="$(git log --oneline --grep="$COMMITS_GREP" -$COMMITS_LIMIT)";
+[ ! -z "$SOURCES" ] || (echo "No commits match your criteria" && exit)
+check_commits "$(git log $COMMITS_BRANCH --oneline --grep="$COMMITS_GREP" -$COMMITS_LIMIT)";
